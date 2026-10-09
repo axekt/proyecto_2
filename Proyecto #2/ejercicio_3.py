@@ -1,17 +1,3 @@
-"""
-EJERCICIO 3: Separación de canales RGB y conversión a escala de grises
-=====================================================================
-
-Dada una imagen fotográfica a color (imagen "b"):
-    1. Separa sus planos de color R, G y B.
-    2. Grafica cada plano de forma individual con Matplotlib.
-    3. Convierte la imagen original a escala de grises.
-
-La conversión a gris se realiza con OpenCV y también manualmente con la
-fórmula de luminancia ITU-R BT.601:
-    Gris = 0.299·R + 0.587·G + 0.114·B
-"""
-
 import os 
 
 import cv2 
@@ -33,19 +19,6 @@ COLORES_HIST =("#e23d4a","#2ea860","#346ee6")
 
 
 def cargar_imagen_rgb (ruta ):
-    """
-    Carga una imagen a color con OpenCV y la convierte de BGR a RGB
-    (Matplotlib espera el orden RGB).
-
-    Parámetros
-    ----------
-    ruta : str
-        Ruta del archivo de imagen.
-
-    Retorna
-    -------
-    np.ndarray (alto, ancho, 3) uint8 en orden RGB.
-    """
     img_bgr =cv2 .imread (ruta ,cv2 .IMREAD_COLOR )
     if img_bgr is None :
         raise FileNotFoundError (f"No se pudo cargar la imagen: {ruta }")
@@ -53,38 +26,17 @@ def cargar_imagen_rgb (ruta ):
 
 
 def separar_canales (img_rgb ):
-    """
-    Separa la imagen RGB en sus tres planos de color.
-
-    Retorna
-    -------
-    (R, G, B) : tupla de matrices 2D uint8 (una intensidad por píxel).
-    """
     r ,g ,b =cv2 .split (img_rgb )
     return r ,g ,b 
 
 
 def canal_coloreado (canal ,indice ):
-    """
-    Construye una imagen RGB donde solo el canal 'indice' conserva sus
-    valores y los otros dos se ponen en cero (visualización "teñida").
-    """
     img =np .zeros ((*canal .shape ,3 ),dtype =np .uint8 )
     img [:,:,indice ]=canal 
     return img 
 
 
 def convertir_a_gris (img_rgb ):
-    """
-    Convierte la imagen RGB a escala de grises por dos métodos:
-
-    1. OpenCV: cv2.cvtColor(..., COLOR_RGB2GRAY)
-    2. Manual: Gris = 0.299·R + 0.587·G + 0.114·B
-
-    Retorna
-    -------
-    (gris_opencv, gris_manual) : matrices 2D uint8.
-    """
     gris_opencv =cv2 .cvtColor (img_rgb ,cv2 .COLOR_RGB2GRAY )
 
     r ,g ,b =[c .astype (np .float64 )for c in separar_canales (img_rgb )]
@@ -94,12 +46,6 @@ def convertir_a_gris (img_rgb ):
 
 
 def graficar_canales (img_rgb ,canales ,ruta_salida =None ):
-    """
-    Grafica con Matplotlib la imagen original y cada plano de color de
-    forma individual:
-        Fila 1: original + cada canal como intensidad (mapa de grises).
-        Fila 2: histograma de los 3 canales + cada canal "teñido" en su color.
-    """
     fig ,axes =plt .subplots (2 ,4 ,figsize =(20 ,9 ))
     fig .suptitle ("Ejercicio 3: Separación de los planos de color R, G, B",
     fontsize =16 ,fontweight ="bold")
@@ -147,10 +93,6 @@ def graficar_canales (img_rgb ,canales ,ruta_salida =None ):
 
 
 def graficar_gris (img_rgb ,gris_opencv ,gris_manual ,ruta_salida =None ):
-    """
-    Grafica la imagen original junto a sus versiones en escala de grises
-    (OpenCV y fórmula manual) y el mapa de diferencias entre ambas.
-    """
     diferencia =cv2 .absdiff (gris_opencv ,gris_manual )
 
     fig ,axes =plt .subplots (1 ,4 ,figsize =(20 ,5 ))
@@ -180,14 +122,6 @@ def graficar_gris (img_rgb ,gris_opencv ,gris_manual ,ruta_salida =None ):
 
 
 def procesar_imagen_b (ruta ,mostrar =True ):
-    """
-    Script completo del ejercicio: carga la imagen "b", separa y grafica
-    sus canales R, G, B y la convierte a escala de grises.
-
-    Retorna
-    -------
-    dict con 'canales' (R, G, B), 'gris_opencv' y 'gris_manual'.
-    """
     img_rgb =cargar_imagen_rgb (ruta )
     alto ,ancho ,_ =img_rgb .shape 
     print (f"\nImagen: {os .path .basename (ruta )}")

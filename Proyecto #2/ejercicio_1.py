@@ -1,26 +1,4 @@
-"""
-EJERCICIO 1: Cálculo de Momentos y Centroides
-=============================================
 
-a) Figura 1.a -> Área, Centroide (cruz dibujada) y Centroide mediante Momentos.
-b) Figura 1.b -> Momento m(2,3), Momento Central mu(2,3) y
-                 Momento Central Normalizado eta(2,3).
-c) Figura 1.c -> Primeros tres momentos invariantes de Hu (H1, H2, H3).
-
-Convención de coordenadas (la misma que usa OpenCV):
-    x -> índice de columna,  y -> índice de fila,  origen en la esquina
-    superior izquierda. f(x, y) = 1 si el píxel pertenece al objeto, 0 si es fondo.
-
-Fórmulas utilizadas:
-    Momento espacial:              m_pq  = Σ Σ x^p · y^q · f(x, y)
-    Centroide:                     x̄ = m10 / m00 ,  ȳ = m01 / m00
-    Momento central:               mu_pq = Σ Σ (x - x̄)^p · (y - ȳ)^q · f(x, y)
-    Momento central normalizado:   eta_pq = mu_pq / mu00^γ ,  γ = (p + q) / 2 + 1
-    Momentos de Hu:
-        H1 = eta20 + eta02
-        H2 = (eta20 - eta02)^2 + 4·eta11^2
-        H3 = (eta30 - 3·eta12)^2 + (3·eta21 - eta03)^2
-"""
 
 import os 
 
@@ -43,25 +21,7 @@ RUTA_SALIDA =os .path .join (directorio ,"ejercicio_1_resultado.png")
 
 
 def cargar_imagen_binaria (ruta ):
-    """
-    Carga una imagen y la binariza separando la figura del fondo.
-
-    Se aplica un umbral de Otsu invertido (figuras de color sobre fondo
-    claro). Si tras el umbral más de la mitad de los píxeles quedan como
-    objeto, se asume que el fondo era oscuro y se invierte la máscara.
-
-    Parámetros
-    ----------
-    ruta : str
-        Ruta del archivo de imagen.
-
-    Retorna
-    -------
-    img_bgr : np.ndarray
-        Imagen original en formato BGR (OpenCV).
-    binaria : np.ndarray (uint8)
-        Máscara binaria con valores 0 (fondo) y 1 (objeto).
-    """
+   
     img_bgr =cv2 .imread (ruta ,cv2 .IMREAD_COLOR )
     if img_bgr is None :
         raise FileNotFoundError (f"No se pudo cargar la imagen: {ruta }")
@@ -76,33 +36,17 @@ def cargar_imagen_binaria (ruta ):
 
 
 def obtener_coordenadas (binaria ):
-    """
-    Genera las mallas de coordenadas X (columnas) e Y (filas) de la imagen.
-
-    Retorna
-    -------
-    x, y : np.ndarray (float64)
-        Matrices del mismo tamaño que la imagen con la coordenada de cada píxel.
-    """
     filas ,columnas =np .indices (binaria .shape ,dtype =np .float64 )
     return columnas ,filas 
 
 
 def momento_espacial (binaria ,p ,q ):
-    """
-    Calcula el momento espacial (raw moment) de orden (p, q):
-        m_pq = Σ Σ x^p · y^q · f(x, y)
-    """
     x ,y =obtener_coordenadas (binaria )
     f =binaria .astype (np .float64 )
     return float (np .sum ((x **p )*(y **q )*f ))
 
 
 def centroide_por_momentos (binaria ):
-    """
-    Calcula el centroide a partir de los momentos de orden 0 y 1:
-        x̄ = m10 / m00 ,  ȳ = m01 / m00
-    """
     m00 =momento_espacial (binaria ,0 ,0 )
     if m00 ==0 :
         raise ValueError ("La imagen no contiene ningún objeto (m00 = 0).")
@@ -110,10 +54,6 @@ def centroide_por_momentos (binaria ):
 
 
 def momento_central (binaria ,p ,q ):
-    """
-    Calcula el momento central de orden (p, q) (invariante a traslación):
-        mu_pq = Σ Σ (x - x̄)^p · (y - ȳ)^q · f(x, y)
-    """
     x ,y =obtener_coordenadas (binaria )
     f =binaria .astype (np .float64 )
     x_c ,y_c =centroide_por_momentos (binaria )
@@ -121,22 +61,12 @@ def momento_central (binaria ,p ,q ):
 
 
 def momento_central_normalizado (binaria ,p ,q ):
-    """
-    Calcula el momento central normalizado de orden (p, q)
-    (invariante a traslación y escala):
-        eta_pq = mu_pq / mu00^γ ,  γ = (p + q) / 2 + 1
-    """
     mu00 =momento_central (binaria ,0 ,0 )
     gamma =(p +q )/2.0 +1.0 
     return momento_central (binaria ,p ,q )/(mu00 **gamma )
 
 
 def dibujar_cruz (img_bgr ,x ,y ,escala ,color ,tipo =cv2 .MARKER_CROSS ,tam =40 ,grosor =2 ):
-    """
-    Dibuja una cruz sobre una imagen previamente ampliada por 'escala'.
-    Las coordenadas (x, y) están en píxeles de la imagen original; se
-    desplazan +0.5 para apuntar al centro del píxel ampliado.
-    """
     punto =(int (round ((x +0.5 )*escala )),int (round ((y +0.5 )*escala )))
     cv2 .drawMarker (img_bgr ,punto ,color ,markerType =tipo ,
     markerSize =tam ,thickness =grosor ,line_type =cv2 .LINE_AA )
@@ -146,28 +76,6 @@ def dibujar_cruz (img_bgr ,x ,y ,escala ,color ,tipo =cv2 .MARKER_CROSS ,tam =40
 
 
 def analizar_figura_1a (ruta ,escala =5 ):
-    """
-    Calcula el Área, el Centroide geométrico y el Centroide mediante
-    momentos de la Figura 1.a, y dibuja ambos centroides con una cruz.
-
-    - Área: número de píxeles del objeto (equivale a m00 en imagen binaria).
-    - Centroide geométrico: promedio de las coordenadas (x, y) de los
-      píxeles que pertenecen al objeto.
-    - Centroide por momentos: x̄ = m10/m00, ȳ = m01/m00 (se verifica además
-      con cv2.moments).
-
-    Parámetros
-    ----------
-    ruta : str
-        Ruta de la Figura 1.a.
-    escala : int
-        Factor de ampliación de la imagen para visualizar mejor las cruces.
-
-    Retorna
-    -------
-    dict con las claves: 'area', 'centroide', 'centroide_momentos',
-    'centroide_opencv', 'momentos', 'imagen_marcada' (RGB) y 'binaria'.
-    """
     img_bgr ,binaria =cargar_imagen_binaria (ruta )
 
 
@@ -218,30 +126,6 @@ def analizar_figura_1a (ruta ,escala =5 ):
 
 
 def momentos_figura_1b (ruta ,p =2 ,q =3 ,escala =5 ):
-    """
-    Calcula, para la Figura 1.b, los momentos de orden (p, q):
-        - Momento espacial               m_pq
-        - Momento central                mu_pq
-        - Momento central normalizado    eta_pq
-
-    Nota: cv2.moments solo entrega momentos hasta orden 3 (p + q <= 3), por
-    lo que el orden (2, 3) -> p + q = 5 se calcula con la implementación
-    propia. Para validarla se comparan los momentos de orden (2, 1) contra
-    los que entrega OpenCV.
-
-    Parámetros
-    ----------
-    ruta : str
-        Ruta de la Figura 1.b.
-    p, q : int
-        Órdenes del momento (por defecto p=2, q=3).
-    escala : int
-        Factor de ampliación para la visualización.
-
-    Retorna
-    -------
-    dict con 'm', 'mu', 'eta', 'centroide', 'validacion' e 'imagen_marcada'.
-    """
     img_bgr ,binaria =cargar_imagen_binaria (ruta )
 
     m_pq =momento_espacial (binaria ,p ,q )
@@ -284,27 +168,6 @@ def momentos_figura_1b (ruta ,p =2 ,q =3 ,escala =5 ):
 
 
 def momentos_hu_figura_1c (ruta ,escala =3 ):
-    """
-    Calcula los tres primeros momentos invariantes de Hu de la Figura 1.c
-    a partir de los momentos centrales normalizados:
-
-        H1 = eta20 + eta02
-        H2 = (eta20 - eta02)^2 + 4·eta11^2
-        H3 = (eta30 - 3·eta12)^2 + (3·eta21 - eta03)^2
-
-    Los resultados se comparan con cv2.HuMoments.
-
-    Parámetros
-    ----------
-    ruta : str
-        Ruta de la Figura 1.c.
-    escala : int
-        Factor de ampliación para la visualización.
-
-    Retorna
-    -------
-    dict con 'hu' (H1, H2, H3 propios), 'hu_opencv', 'eta' e 'imagen'.
-    """
     img_bgr ,binaria =cargar_imagen_binaria (ruta )
 
     eta ={f"eta{p }{q }":momento_central_normalizado (binaria ,p ,q )
@@ -345,10 +208,6 @@ def _panel_texto (ax ,titulo ,texto ):
 
 
 def graficar_resultados (res_a ,res_b ,res_c ,ruta_salida =None ,mostrar =True ):
-    """
-    Genera una figura de 3 filas (literales a, b, c) con la imagen procesada a
-    la izquierda y los valores calculados a la derecha.
-    """
     fig ,axes =plt .subplots (3 ,2 ,figsize =(15 ,15 ),
     gridspec_kw ={"width_ratios":[1.1 ,1 ]})
     fig .suptitle ("Ejercicio 1: Momentos y Centroides",fontsize =16 ,fontweight ="bold")
